@@ -11,7 +11,7 @@ from WIFI_CONFIG import SSID, PASSWORD
 
 firmware_url = "https://raw.githubusercontent.com/GuusvanMarle/Parkeerbord/"
 
-#hoihoi
+#doeidoei
 
 strip = neopixel.NeoPixel(machine.Pin(16), 47)
 
