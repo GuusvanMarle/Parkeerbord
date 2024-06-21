@@ -10,6 +10,8 @@ strip = neopixel.NeoPixel(machine.Pin(16), 47)
 
 solarPin = machine.ADC(27)
 
+#hallo, werkt het draadloos uploaden??
+
 white = (45,40,20)
 white1 = (40,36,18)
 white2 = (35,32,16)
