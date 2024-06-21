@@ -6,11 +6,16 @@ import neopixel
 import ujson as json
 from ota import OTAUpdater
 
+from ota import OTAUpdater
+from WIFI_CONFIG import SSID, PASSWORD
+
+firmware_url = "https://raw.githubusercontent.com/GuusvanMarle/Parkeerbord/"
+
+#hoihoi
+
 strip = neopixel.NeoPixel(machine.Pin(16), 47)
 
 solarPin = machine.ADC(27)
-
-#hallo, werkt het draadloos uploaden???
 
 white = (45,40,20)
 white1 = (40,36,18)
@@ -271,31 +276,31 @@ def settings():
 
 # if you do not see the network you may have to power cycle
 # unplug your pico w for 10 seconds and plug it in again
-def ap_mode(ssid, password):
-    """
-        Description: This is a function to activate AP mode
-
-        Parameters:
-
-        ssid[str]: The name of your internet connection
-        password[str]: Password for your internet connection
-
-        Returns: Nada
-    """
-    # Just making our internet connection
-    ap = network.WLAN(network.AP_IF)
-    ap.config(essid=ssid, password=password)
-    ap.active(True)
-
-    while ap.active() == False:
-        pass
-    print('AP Mode Is Active, You can Now Connect')
-    print('IP Address To Connect to: ' + ap.ifconfig()[0])
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   #creating socket object
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(('', 80))
-    s.listen(5)
+# def ap_mode(ssid, password):
+#     """
+#         Description: This is a function to activate AP mode
+# 
+#         Parameters:
+# 
+#         ssid[str]: The name of your internet connection
+#         password[str]: Password for your internet connection
+# 
+#         Returns: Nada
+#     """
+#     # Just making our internet connection
+#     ap = network.WLAN(network.AP_IF)
+#     ap.config(essid=ssid, password=password)
+#     ap.active(True)
+# 
+#     while ap.active() == False:
+#         pass
+#     print('AP Mode Is Active, You can Now Connect')
+#     print('IP Address To Connect to: ' + ap.ifconfig()[0])
+# 
+#     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   #creating socket object
+#     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+#     s.bind(('', 80))
+#     s.listen(5)
 
 async def handle_client(reader, writer):
     global showState
@@ -363,8 +368,8 @@ async def handle_client(reader, writer):
     await writer.wait_closed()
     print('Client Disconnected')
 
-ap_mode('Parkeerbord Villa BreTil',
-        'VillaBreTil5121')
+# ap_mode('Parkeerbord Villa BreTil',
+#         'VillaBreTil5121')
 
 def map_range(x, in_min, in_max, out_min, out_max):
   return (x - in_min) * (out_max - out_min) // (in_max - in_min) + out_min
@@ -395,6 +400,9 @@ async def main():
     while True:
         await asyncio.sleep(0.001)
         currentMillis = time.time_ns() // 1_000_000
+        
+        ota_updater = OTAUpdater(SSID, PASSWORD, firmware_url, "main.py")
+        ota_updater.download_and_install_update_if_available()
         
         solarVoltage = solarPin.read_u16()
         
