@@ -9,9 +9,16 @@ from ota import OTAUpdater
 from ota import OTAUpdater
 from WIFI_CONFIG import SSID, PASSWORD
 
-firmware_url = "https://raw.githubusercontent.com/GuusvanMarle/Parkeerbord/"
+ssid = "DeWerkplaats"
+password = "215172!!"
 
-#doeidoei
+# Check for OTA updates
+repo_name = "Parkeerbord"
+branch = "main"
+firmware_url = f"https://github.com/GuusvanMarle/{repo_name}/{branch}/"
+ota_updater = OTAUpdater(firmware_url, "main.py")
+
+#dagdag
 
 strip = neopixel.NeoPixel(machine.Pin(16), 47)
 
@@ -266,8 +273,11 @@ def settings():
             <input type="submit" value="Submit">
         </form>
         <br>
-        
-        
+        <br>
+        <br>
+        <form action="./ota"> 
+                    <button class="button" type="submit">OTA Upload</button>
+        </form>
 	</div>
 </body>
 </html>
@@ -301,6 +311,42 @@ def settings():
 #     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 #     s.bind(('', 80))
 #     s.listen(5)
+
+# Init Wi-Fi Interface
+def init_wifi(ssid, password):
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    # Connect to your network
+    #wlan.ifconfig(('192.168.178.9', '255.255.255.0', '192.168.178.1', '8.8.8.8'))
+    wlan.connect(ssid, password)
+    # Wait for Wi-Fi connection
+    connection_timeout = 10
+    while connection_timeout > 0:
+        print(wlan.status())
+        if wlan.status() >= 3:
+            break
+        connection_timeout -= 1
+        print('Waiting for Wi-Fi connection...')
+        time.sleep(1)
+    # Check if connection is successful
+    if wlan.status() != 3:
+        print('Failed to connect to Wi-Fi')
+        return False
+    else:
+        print('Connection successful!')
+        network_info = wlan.ifconfig()
+        print('IP address:', network_info[0])
+        return True
+
+def connect():
+    #Connect to WLAN
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect("DeWerkplaats", "215172!!")
+    while wlan.isconnected() == False:
+        print('Waiting for connection...')
+        sleep(1)
+    print(wlan.ifconfig())
 
 async def handle_client(reader, writer):
     global showState
@@ -344,7 +390,8 @@ async def handle_client(reader, writer):
         if solarRequest.partition('=')[2].partition('&')[2].partition('=')[2] != '':
             solarShow = int(solarRequest.partition('=')[2].partition('&')[2].partition('=')[2])
         response = settings()
-        
+    elif requestType == '/ota':
+        ota_updater.download_and_install_update_if_available()
         
     mydata = {
             'solarShow': solarShow,
@@ -383,6 +430,12 @@ async def main():
     global solarOn
     global solarOff
     
+    if not init_wifi(ssid, password):
+        print('Exiting program.')
+        return
+    
+    
+     
     with open('datafile.json', 'r') as f:
         variables = json.load(f)
         
@@ -390,19 +443,21 @@ async def main():
     solarOn = variables['solarOn']
     solarOff = variables['solarOff']
     
-    server = asyncio.start_server(handle_client, "192.168.4.1", 80)
+    server = asyncio.start_server(handle_client, "0.0.0.0", 80)
     asyncio.create_task(server)
 
     prevMillis = 0
     direction = False
     arrowIndex = 0;
     
+    
+    
     while True:
         await asyncio.sleep(0.001)
         currentMillis = time.time_ns() // 1_000_000
         
-        ota_updater = OTAUpdater(SSID, PASSWORD, firmware_url, "main.py")
-        ota_updater.download_and_install_update_if_available()
+        #ota_updater = OTAUpdater(SSID, PASSWORD, firmware_url, "main.py")
+        #ota_updater.download_and_install_update_if_available()
         
         solarVoltage = solarPin.read_u16()
         
@@ -460,3 +515,4 @@ except Exception as e:
     print('Error occured: ', e)
 except KeyboardInterrupt:
     print('Program Interrupted by the user')
+
