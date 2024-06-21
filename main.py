@@ -317,7 +317,7 @@ def init_wifi(ssid, password):
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     # Connect to your network
-    #wlan.ifconfig(('192.168.178.9', '255.255.255.0', '192.168.178.1', '8.8.8.8'))
+    wlan.ifconfig(('192.168.22.125', '255.255.255.0', '192.168.22.251', '8.8.8.8'))
     wlan.connect(ssid, password)
     # Wait for Wi-Fi connection
     connection_timeout = 10
@@ -337,16 +337,6 @@ def init_wifi(ssid, password):
         network_info = wlan.ifconfig()
         print('IP address:', network_info[0])
         return True
-
-def connect():
-    #Connect to WLAN
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    wlan.connect("DeWerkplaats", "215172!!")
-    while wlan.isconnected() == False:
-        print('Waiting for connection...')
-        sleep(1)
-    print(wlan.ifconfig())
 
 async def handle_client(reader, writer):
     global showState
@@ -430,9 +420,7 @@ async def main():
     global solarOn
     global solarOff
     
-    if not init_wifi(ssid, password):
-        print('Exiting program.')
-        return
+    
     
     
      
@@ -455,6 +443,10 @@ async def main():
     while True:
         await asyncio.sleep(0.001)
         currentMillis = time.time_ns() // 1_000_000
+        
+        if not init_wifi(ssid, password):
+            print('Exiting program.')
+            return
         
         #ota_updater = OTAUpdater(SSID, PASSWORD, firmware_url, "main.py")
         #ota_updater.download_and_install_update_if_available()
@@ -515,4 +507,3 @@ except Exception as e:
     print('Error occured: ', e)
 except KeyboardInterrupt:
     print('Program Interrupted by the user')
-
