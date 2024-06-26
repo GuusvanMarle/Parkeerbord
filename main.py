@@ -9,7 +9,7 @@ import ujson as json
 from ota import OTAUpdater
 from WIFI_CONFIG import SSID, PASSWORD
 
-ssid = "Villa BreTil"
+ssid = "Parkeerbord"
 password = "Villa5121"
 
 # Check for OTA updates
