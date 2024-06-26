@@ -1,10 +1,10 @@
 import network
 import time
 import socket
+import machine
 import asyncio
 import neopixel
 import ujson as json
-from ota import OTAUpdater
 
 from ota import OTAUpdater
 from WIFI_CONFIG import SSID, PASSWORD
@@ -16,7 +16,6 @@ password = "Villa5121"
 repo_name = "Parkeerbord"
 branch = "main"
 firmware_url = f"https://github.com/GuusvanMarle/{repo_name}/{branch}/"
-ota_updater = OTAUpdater(firmware_url, "main.py")
 
 #dagdag
 
@@ -147,7 +146,7 @@ def index():
 	
 	<div class="border">
         <p>
-        <h1>Parkeerbord Villa BreTil Test</h1>
+        <h1>Parkeerbord Villa BreTil</h1>
         
         <div>
             <form action="./show"> 
@@ -305,56 +304,19 @@ def settings():
 
 
 
-wlan = network.WLAN(network.STA_IF)
-ap = network.WLAN(network.AP_IF)
 
 
-# if you do not see the network you may have to power cycle
-# unplug your pico w for 10 seconds and plug it in again
-def ap_mode(ssid, password):
-    """
-        Description: This is a function to activate AP mode
-
-        Parameters:
-
-        ssid[str]: The name of your internet connection
-        password[str]: Password for your internet connection
-
-        Returns: Nada
-    """
-    # Just making our internet connection
-    
-    ap.config(essid=ssid, password=password)
-    wlan.active(False)
-    ap.active(True)
-
-    while ap.active() == False:
-        pass
-    print('AP Mode Is Active, You can Now Connect')
-    print('IP Address To Connect to: ' + ap.ifconfig()[0])
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   #creating socket object
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(('', 80))
-    s.listen(5)
-
-# Init Wi-Fi Interface
 def init_wifi(ssid, password):
-
+    wlan = network.WLAN(network.STA_IF)
+#     wlan.disconnect()
+#     wlan.active(False)
     wlan.active(True)
-    wlan.config(pm = 0xa11140)
-
-#     accessPoints = wlan.scan() 
-#     for ap in accessPoints:
-#         if ap[0] == b'Villa BreTil':
-#             print(f'AP = {ap[0].decode()}, strength = {ap[3]}')
-
-
     # Connect to your network
     wlan.ifconfig(('192.168.22.125', '255.255.255.0', '192.168.22.251', '8.8.8.8'))
     wlan.connect(ssid, password)
-
-    while wlan.isconnected == False:
+    # Wait for Wi-Fi connection
+    connection_timeout = 10
+    while connection_timeout > 0:
         print(wlan.status())
         if wlan.status() >= 3:
             break
@@ -415,6 +377,7 @@ async def handle_client(reader, writer):
             solarShow = int(solarRequest.partition('=')[2].partition('&')[2].partition('=')[2])
         response = settings()
     elif requestType == '/ota':
+        ota_updater = OTAUpdater(firmware_url, "main.py")
         ota_updater.download_and_install_update_if_available()
     elif requestType == '/wifi':
         apActive = False
@@ -455,7 +418,8 @@ def map_range(x, in_min, in_max, out_min, out_max):
 def clamp(n, minn, maxn):
     return max(min(maxn, n), minn)
 
-async def main():    
+async def main():
+    
     global solarVoltage
     global solarShow
     global solarOn
@@ -476,10 +440,7 @@ async def main():
     solarOn = variables['solarOn']
     solarOff = variables['solarOff']
     
-    if apActive == False:
-        server = asyncio.start_server(handle_client, "0.0.0.0", 80)
-    else:
-        server = asyncio.start_server(handle_client, "192.168.4.1", 80)
+    server = asyncio.start_server(handle_client, "0.0.0.0", 80)
     
     asyncio.create_task(server)
 
@@ -492,13 +453,13 @@ async def main():
     while True:
         await asyncio.sleep(0.001)
         currentMillis = time.time_ns() // 1_000_000
-        
-        if wlan.isconnected() == False:
-            led.off()
-            if not init_wifi(ssid, password):
-                print("help")
-        else:
-            led.on()
+#         print(wlan.isconnected())
+#         if wlan.isconnected() == False:
+#             led.off()
+#             if not init_wifi(ssid, password):
+#                 print("help")
+#         else:
+#             led.on()
             
         solarVoltage = solarPin.read_u16()
         
@@ -556,4 +517,5 @@ except Exception as e:
     print('Error occured: ', e)
 except KeyboardInterrupt:
     print('Program Interrupted by the user')
+
 
