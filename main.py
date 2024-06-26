@@ -147,7 +147,7 @@ def index():
 	
 	<div class="border">
         <p>
-        <h1>Parkeerbord Villa BreTil</h1>
+        <h1>Parkeerbord Villa BreTil Test</h1>
         
         <div>
             <form action="./show"> 
