@@ -9,8 +9,8 @@ from ota import OTAUpdater
 from ota import OTAUpdater
 from WIFI_CONFIG import SSID, PASSWORD
 
-ssid = "DeWerkplaats"
-password = "215172!!"
+ssid = "Villa BreTil"
+password = "Villa5121"
 
 # Check for OTA updates
 repo_name = "Parkeerbord"
@@ -24,15 +24,27 @@ strip = neopixel.NeoPixel(machine.Pin(16), 47)
 
 solarPin = machine.ADC(27)
 
-white = (45,40,20)
-white1 = (40,36,18)
-white2 = (35,32,16)
-white3 = (30,28,15)
-white4 = (25,22,12)
-white5 = (22,18,10)
-white6 = (20,16,8)
-white7 = (15,12,5)
-white8 = (10,8,3)
+led = machine.Pin("LED", machine.Pin.OUT)
+
+# white = (45,40,20)
+# white1 = (40,36,18)
+# white2 = (35,32,16)
+# white3 = (30,28,15)
+# white4 = (25,22,12)
+# white5 = (22,18,10)
+# white6 = (20,16,8)
+# white7 = (15,12,5)
+# white8 = (10,8,3)
+
+white = (85,40,20)
+white1 = (80,36,18)
+white2 = (75,32,16)
+white3 = (60,28,15)
+white4 = (55,22,12)
+white5 = (42,18,10)
+white6 = (30,16,8)
+white7 = (25,12,5)
+white8 = (15,8,3)
 
 
 off = (0,0,0)
@@ -43,6 +55,8 @@ solarVoltage = 0
 solarShow = 0
 solarOn = 0
 solarOff = 0
+
+apActive = False
 
 mydata = {
             'solarShow': 0,
@@ -278,50 +292,69 @@ def settings():
         <form action="./ota"> 
                     <button class="button" type="submit">OTA Upload</button>
         </form>
+        <br><br>
+        <form action="./wifi"> 
+                    <button class="button" type="submit">Verbind WiFi</button>
+        </form>
+        <br>
 	</div>
 </body>
 </html>
          """
   return str(html)
 
+
+
+wlan = network.WLAN(network.STA_IF)
+ap = network.WLAN(network.AP_IF)
+
+
 # if you do not see the network you may have to power cycle
 # unplug your pico w for 10 seconds and plug it in again
-# def ap_mode(ssid, password):
-#     """
-#         Description: This is a function to activate AP mode
-# 
-#         Parameters:
-# 
-#         ssid[str]: The name of your internet connection
-#         password[str]: Password for your internet connection
-# 
-#         Returns: Nada
-#     """
-#     # Just making our internet connection
-#     ap = network.WLAN(network.AP_IF)
-#     ap.config(essid=ssid, password=password)
-#     ap.active(True)
-# 
-#     while ap.active() == False:
-#         pass
-#     print('AP Mode Is Active, You can Now Connect')
-#     print('IP Address To Connect to: ' + ap.ifconfig()[0])
-# 
-#     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   #creating socket object
-#     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-#     s.bind(('', 80))
-#     s.listen(5)
+def ap_mode(ssid, password):
+    """
+        Description: This is a function to activate AP mode
+
+        Parameters:
+
+        ssid[str]: The name of your internet connection
+        password[str]: Password for your internet connection
+
+        Returns: Nada
+    """
+    # Just making our internet connection
+    
+    ap.config(essid=ssid, password=password)
+    wlan.active(False)
+    ap.active(True)
+
+    while ap.active() == False:
+        pass
+    print('AP Mode Is Active, You can Now Connect')
+    print('IP Address To Connect to: ' + ap.ifconfig()[0])
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   #creating socket object
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(('', 80))
+    s.listen(5)
 
 # Init Wi-Fi Interface
 def init_wifi(ssid, password):
-    wlan = network.WLAN(network.STA_IF)
+
     wlan.active(True)
+    wlan.config(pm = 0xa11140)
+
+#     accessPoints = wlan.scan() 
+#     for ap in accessPoints:
+#         if ap[0] == b'Villa BreTil':
+#             print(f'AP = {ap[0].decode()}, strength = {ap[3]}')
+
+
     # Connect to your network
     wlan.ifconfig(('192.168.22.125', '255.255.255.0', '192.168.22.251', '8.8.8.8'))
     wlan.connect(ssid, password)
-    # Wait for Wi-Fi connection
-    connection_timeout = 10
-    while connection_timeout > 0:
+
+    while wlan.isconnected == False:
         print(wlan.status())
         if wlan.status() >= 3:
             break
@@ -344,6 +377,7 @@ async def handle_client(reader, writer):
     global brightness
     global solarOn
     global solarOff
+    global apActive
 
     
     response = index()
@@ -382,7 +416,15 @@ async def handle_client(reader, writer):
         response = settings()
     elif requestType == '/ota':
         ota_updater.download_and_install_update_if_available()
-        
+    elif requestType == '/wifi':
+        apActive = False
+        if wlan.isconnected() == False:
+            if apActive == False:
+                if not init_wifi(ssid, password):
+                    print('Starting AP mode')
+                    ap_mode('Parkeerbord Villa BreTil', 'VillaBreTil5121')
+                    apActive = True
+    
     mydata = {
             'solarShow': solarShow,
             'solarOn': solarOn,
@@ -405,8 +447,7 @@ async def handle_client(reader, writer):
     await writer.wait_closed()
     print('Client Disconnected')
 
-# ap_mode('Parkeerbord Villa BreTil',
-#         'VillaBreTil5121')
+# 
 
 def map_range(x, in_min, in_max, out_min, out_max):
   return (x - in_min) * (out_max - out_min) // (in_max - in_min) + out_min
@@ -419,10 +460,14 @@ async def main():
     global solarShow
     global solarOn
     global solarOff
+    global apActive
     
-    
-    
-    
+    if not init_wifi(ssid, password):
+        print("not connected")
+#         print('Starting AP mode')
+#         if apActive == False:
+#             ap_mode('Parkeerbord Villa BreTil', 'VillaBreTil5121')
+#             apActive = True
      
     with open('datafile.json', 'r') as f:
         variables = json.load(f)
@@ -431,7 +476,11 @@ async def main():
     solarOn = variables['solarOn']
     solarOff = variables['solarOff']
     
-    server = asyncio.start_server(handle_client, "0.0.0.0", 80)
+    if apActive == False:
+        server = asyncio.start_server(handle_client, "0.0.0.0", 80)
+    else:
+        server = asyncio.start_server(handle_client, "192.168.4.1", 80)
+    
     asyncio.create_task(server)
 
     prevMillis = 0
@@ -444,13 +493,13 @@ async def main():
         await asyncio.sleep(0.001)
         currentMillis = time.time_ns() // 1_000_000
         
-        if not init_wifi(ssid, password):
-            print('Exiting program.')
-            return
-        
-        #ota_updater = OTAUpdater(SSID, PASSWORD, firmware_url, "main.py")
-        #ota_updater.download_and_install_update_if_available()
-        
+        if wlan.isconnected() == False:
+            led.off()
+            if not init_wifi(ssid, password):
+                print("help")
+        else:
+            led.on()
+            
         solarVoltage = solarPin.read_u16()
         
         if solarVoltage < solarOn:
@@ -507,3 +556,4 @@ except Exception as e:
     print('Error occured: ', e)
 except KeyboardInterrupt:
     print('Program Interrupted by the user')
+
