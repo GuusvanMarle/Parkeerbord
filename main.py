@@ -291,10 +291,7 @@ def settings():
         <form action="./ota"> 
                     <button class="button" type="submit">OTA Upload</button>
         </form>
-        <br><br>
-        <form action="./wifi"> 
-                    <button class="button" type="submit">Verbind WiFi</button>
-        </form>
+        <br>
         <br>
 	</div>
 </body>
