@@ -9,7 +9,7 @@ import ujson as json
 from ota import OTAUpdater
 from WIFI_CONFIG import SSID, PASSWORD
 
-ssid = "Parkeerbord"
+ssid = "Villa BreTil"
 password = "Villa5121"
 
 # Check for OTA updates
@@ -146,7 +146,7 @@ def index():
 	
 	<div class="border">
         <p>
-        <h1>Parkeerbord Villa BreTil</h1>
+        <h1>Parkeerbord Villa BreTil Test</h1>
         
         <div>
             <form action="./show"> 
@@ -305,10 +305,10 @@ def settings():
 
 
 
-
+wlan = network.WLAN(network.STA_IF)
 def init_wifi(ssid, password):
-    wlan = network.WLAN(network.STA_IF)
-#     wlan.disconnect()
+    
+    wlan.disconnect()
 #     wlan.active(False)
     wlan.active(True)
     # Connect to your network
@@ -454,12 +454,12 @@ async def main():
         await asyncio.sleep(0.001)
         currentMillis = time.time_ns() // 1_000_000
 #         print(wlan.isconnected())
-#         if wlan.isconnected() == False:
-#             led.off()
-#             if not init_wifi(ssid, password):
-#                 print("help")
-#         else:
-#             led.on()
+        if wlan.isconnected() == False:
+            led.off()
+            if not init_wifi(ssid, password):
+                print("help")
+        else:
+            led.on()
             
         solarVoltage = solarPin.read_u16()
         
